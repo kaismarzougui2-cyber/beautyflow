@@ -69,6 +69,14 @@ alter table public.clients      enable row level security;
 alter table public.services     enable row level security;
 alter table public.appointments enable row level security;
 
+-- Suppression des policies existantes (idempotent)
+drop policy if exists "profiles: lecture propre"    on public.profiles;
+drop policy if exists "profiles: insertion propre"  on public.profiles;
+drop policy if exists "profiles: mise à jour propre" on public.profiles;
+drop policy if exists "clients: accès complet pro"       on public.clients;
+drop policy if exists "services: accès complet pro"      on public.services;
+drop policy if exists "appointments: accès complet pro"  on public.appointments;
+
 -- Profiles
 create policy "profiles: lecture propre" on public.profiles
   for select using (auth.uid() = id);
