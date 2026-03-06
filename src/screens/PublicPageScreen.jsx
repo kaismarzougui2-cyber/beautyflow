@@ -49,7 +49,8 @@ export default function PublicPageScreen({ t, onGoToServices, onGoToSettings }) 
   const [rlsOk, setRlsOk] = useState(null); // null=checking, true=ok, false=blocked
 
   const slug = profile?.slug && profile.slug !== "null" ? profile.slug : null;
-  const publicUrl = slug ? `beautyflow.app/${slug}` : null;
+  const baseUrl = window.location.origin;
+  const publicUrl = slug ? `${baseUrl}/pro/${slug}` : null;
 
   useEffect(() => {
     if (!user) return;
@@ -120,7 +121,7 @@ export default function PublicPageScreen({ t, onGoToServices, onGoToSettings }) 
                 }}
                 style={{ padding: "10px 18px", borderRadius: t.rsm, border: "none", background: "#C2185B", color: "#fff", fontFamily: t.fontBody, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
               >
-                {generatingSlug ? "Génération..." : `Générer mon lien → beautyflow.app/${makeSlug(profile.business_name)}`}
+                {generatingSlug ? "Génération..." : `Générer mon lien → ${baseUrl}/pro/${makeSlug(profile.business_name)}`}
               </button>
             ) : (
               <button
@@ -160,7 +161,7 @@ export default function PublicPageScreen({ t, onGoToServices, onGoToSettings }) 
             </a>
             <button
               onClick={() => {
-                const text = `Réservez en ligne chez ${profile?.business_name || "notre salon"} !\n👉 https://${publicUrl}`;
+                const text = `Réservez en ligne chez ${profile?.business_name || "notre salon"} !\n👉 ${publicUrl}`;
                 navigator.clipboard?.writeText(text).catch(() => {});
               }}
               style={{ flex: 1, padding: "9px", borderRadius: t.rsm, border: `1.5px solid ${t.border}`, background: t.bgCard, color: t.text, fontFamily: t.fontBody, fontWeight: 600, fontSize: 12, cursor: "pointer" }}

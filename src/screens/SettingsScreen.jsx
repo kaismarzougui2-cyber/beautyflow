@@ -52,6 +52,7 @@ export default function SettingsScreen({ t, proType, currentTheme }) {
   const [savingHours, setSavingHours] = useState(false);
 
   const slug = profile?.slug || "mon-salon";
+  const baseUrl = window.location.origin;
   const proName = profile?.name || "";
 
   const timeInpStyle = {
@@ -61,7 +62,7 @@ export default function SettingsScreen({ t, proType, currentTheme }) {
   };
 
   const handleCopy = () => {
-    if (navigator.clipboard) navigator.clipboard.writeText(`beautyflow.app/${slug}`).catch(() => {});
+    if (navigator.clipboard) navigator.clipboard.writeText(`${baseUrl}/pro/${slug}`).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -143,13 +144,13 @@ export default function SettingsScreen({ t, proType, currentTheme }) {
             <Av init={initials(proName)} size={58} t={t} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: t.font, fontSize: 20, fontWeight: 700, color: t.text }}>{proName || "Mon profil"}</div>
-              <div style={{ fontSize: 12, color: t.primary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>beautyflow.app/{slug}</div>
+              <div style={{ fontSize: 12, color: t.primary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{baseUrl}/pro/{slug}</div>
               {proType && <div style={{ fontSize: 11, color: t.textMuted, marginTop: 2 }}>{proType}</div>}
             </div>
           </div>
           <Row icon="✏️" label="Modifier le profil" sub="Nom, établissement, ville" right={<span style={{ color: t.textSoft }}>›</span>}
             onClick={() => { setEditForm({ name: profile?.name || "", business_name: profile?.business_name || "", city: profile?.city || "", phone: profile?.phone || "" }); setShowEditProfile(true); }} />
-          <Row icon="🔗" label="Lien de réservation" sub={`beautyflow.app/${slug}`}
+          <Row icon="🔗" label="Lien de réservation" sub={`${baseUrl}/pro/${slug}`}
             right={<Btn t={t} size="sm" variant="soft" onClick={handleCopy}>{copied ? "✓ Copié !" : "Copier"}</Btn>} noBorder />
         </Section>
 
