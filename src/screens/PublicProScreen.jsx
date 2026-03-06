@@ -259,6 +259,11 @@ export default function PublicProScreen({ slug }) {
     if (!uid) return;
     setBooking(true);
     setBookError("");
+    // Ensure a profile row exists for this client (FK constraint on client_id)
+    await supabase.from("profiles").upsert(
+      { id: uid, name: user.email?.split("@")[0] || "Client", role: "client" },
+      { onConflict: "id", ignoreDuplicates: true }
+    );
     const { error } = await supabase.from("appointments").insert({
       pro_id: pro.id,
       client_id: uid,

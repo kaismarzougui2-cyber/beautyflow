@@ -31,8 +31,18 @@ export function AuthProvider({ children }) {
   const signIn = (email, password) =>
     supabase.auth.signInWithPassword({ email, password });
 
-  const signUp = (email, password) =>
-    supabase.auth.signUp({ email, password });
+  const signUp = async (email, password) => {
+    const result = await supabase.auth.signUp({ email, password });
+    // Create a minimal profile so FK constraints on appointments.client_id are satisfied
+    if (result.data?.user) {
+      await supabase.from("profiles").upsert({
+        id: result.data.user.id,
+        name: email.split("@")[0],
+        role: "client",
+      }, { onConflict: "id", ignoreDuplicates: true });
+    }
+    return result;
+  };
 
   const signOut = () => supabase.auth.signOut();
 
