@@ -17,7 +17,7 @@ const toDateStr = (d) => {
 };
 const initials = (name) => (name || "?").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
-export default function DashboardScreen({ t, proName, proType }) {
+export default function DashboardScreen({ t, proName, proType, onGoToPage }) {
   const { user, profile } = useAuth();
   const [period, setPeriod] = useState("week");
   const [copied, setCopied] = useState(false);
@@ -128,10 +128,13 @@ export default function DashboardScreen({ t, proName, proType }) {
             <Av init={initials(proName)} size={48} t={t} style={{ border: `2.5px solid ${t.bgCard}` }} />
           )}
         </div>
-        {/* Share link card */}
-        <div style={{ background: t.bgCard, borderRadius: t.r, padding: "12px 14px", border: `1px solid ${t.border}`, boxShadow: t.shadow }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
-            🔗 Votre lien de réservation
+        {/* Share link card → opens Ma Page */}
+        <div
+          onClick={onGoToPage}
+          style={{ background: t.bgCard, borderRadius: t.r, padding: "12px 14px", border: `1.5px solid ${t.primary}30`, boxShadow: t.shadow, cursor: onGoToPage ? "pointer" : "default" }}
+        >
+          <div style={{ fontSize: 10, fontWeight: 700, color: t.primary, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+            🌐 Votre page de réservation publique
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ flex: 1, background: isB ? "#FFF0F8" : "#0A1220", borderRadius: t.rsm, padding: "8px 12px", overflow: "hidden" }}>
@@ -139,9 +142,12 @@ export default function DashboardScreen({ t, proName, proType }) {
                 beautyflow.app/{slug}
               </span>
             </div>
-            <Btn t={t} size="sm" variant={copied ? "ghost" : "soft"} onClick={handleCopy} style={{ flexShrink: 0 }}>
-              {copied ? "✓ Copié !" : "Copier"}
+            <Btn t={t} size="sm" variant="soft" onClick={e => { e.stopPropagation(); handleCopy(); }} style={{ flexShrink: 0 }}>
+              {copied ? "✓" : "Copier"}
             </Btn>
+            {onGoToPage && (
+              <span style={{ fontSize: 16, color: t.primary }}>›</span>
+            )}
           </div>
         </div>
       </div>

@@ -11,11 +11,12 @@ import LoginScreen from "./screens/LoginScreen.jsx";
 import OnboardingScreen from "./screens/OnboardingScreen.jsx";
 import ExploreScreen from "./screens/ExploreScreen.jsx";
 import PublicProScreen from "./screens/PublicProScreen.jsx";
+import PublicPageScreen from "./screens/PublicPageScreen.jsx";
 
 const NAV = [
   { id: "dashboard", icon: "📊", label: "Dashboard" },
   { id: "agenda",    icon: "📅", label: "Agenda" },
-  { id: "clients",   icon: "👥", label: "Clients" },
+  { id: "page",      icon: "🌐", label: "Ma Page" },
   { id: "services",  icon: "✨", label: "Services" },
   { id: "settings",  icon: "⚙️", label: "Réglages" },
 ];
@@ -70,9 +71,10 @@ function AppShell() {
       `}</style>
 
       <div key={screen} style={{ animation: "slideUp 0.25s ease" }}>
-        {screen === "dashboard" && <DashboardScreen t={t} proName={proName} proType={proType} />}
+        {screen === "dashboard" && <DashboardScreen t={t} proName={proName} proType={proType} onGoToPage={() => setScreen("page")} />}
         {screen === "agenda"    && <AgendaScreen t={t} />}
         {screen === "clients"   && <ClientsScreen t={t} />}
+        {screen === "page"      && <PublicPageScreen t={t} onGoToServices={() => setScreen("services")} onGoToSettings={() => setScreen("settings")} />}
         {screen === "services"  && <ServicesScreen t={t} />}
         {screen === "settings"  && <SettingsScreen t={t} proType={proType} currentTheme={themeId} onScreenChange={setScreen} />}
       </div>

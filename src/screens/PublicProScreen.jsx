@@ -198,13 +198,20 @@ export default function PublicProScreen({ slug }) {
   }, [pro]);
 
   const loadPro = async () => {
-    const { data } = await supabase.from("profiles").select("*").eq("slug", slug).single();
-    setPro(data);
-    if (data) {
-      const { data: svcs } = await supabase
-        .from("services").select("*").eq("pro_id", data.id).eq("active", true).order("price");
-      setServices(svcs || []);
+    const { data, error } = await supabase
+      .from("profiles").select("*").eq("slug", slug).maybeSingle();
+
+    if (error || !data) {
+      // Could be RLS blocking or slug not found
+      setPro(null);
+      setLoading(false);
+      return;
     }
+
+    setPro(data);
+    const { data: svcs } = await supabase
+      .from("services").select("*").eq("pro_id", data.id).eq("active", true).order("price");
+    setServices(svcs || []);
     setLoading(false);
   };
 
@@ -267,16 +274,43 @@ export default function PublicProScreen({ slug }) {
     );
   }
 
-  // Not found
+  // Not found (RLS or bad slug)
   if (!pro) {
+    const tb = T.beauty;
     return (
-      <div style={{ maxWidth: 430, margin: "0 auto", background: T.beauty.bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, fontFamily: T.beauty.fontBody }}>
+      <div style={{ maxWidth: 430, margin: "0 auto", background: tb.bg, minHeight: "100vh", fontFamily: tb.fontBody, padding: "40px 24px" }}>
         <style>{`*{box-sizing:border-box;margin:0;padding:0;}`}</style>
-        <div style={{ fontSize: 48 }}>😔</div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.beauty.text }}>Professionnel introuvable</div>
-        <button onClick={() => navigate("/explore")} style={{ color: T.beauty.primary, background: "none", border: "none", cursor: "pointer", fontSize: 14, fontFamily: T.beauty.fontBody }}>
-          ← Retour à la recherche
+        <button onClick={() => navigate("/explore")} style={{ color: tb.textMuted, background: "none", border: "none", cursor: "pointer", fontSize: 13, fontFamily: tb.fontBody, marginBottom: 28 }}>
+          ← Retour
         </button>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ fontSize: 52, marginBottom: 12 }}>😔</div>
+          <div style={{ fontFamily: tb.font, fontSize: 22, fontWeight: 700, color: tb.text }}>Page introuvable</div>
+          <div style={{ fontSize: 13, color: tb.textMuted, marginTop: 6, lineHeight: 1.6 }}>
+            Le professionnel "<strong>{slug}</strong>" n'existe pas ou sa page n'est pas encore accessible publiquement.
+          </div>
+        </div>
+
+        <div style={{ background: "#FFF8E1", border: "1px solid #F59E0B40", borderRadius: tb.r, padding: "16px" }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: "#B45309", marginBottom: 8 }}>
+            ⚙️ Si vous êtes le professionnel
+          </div>
+          <div style={{ fontSize: 12, color: "#92400E", lineHeight: 1.6, marginBottom: 10 }}>
+            Activez l'accès public dans <strong>Supabase → SQL Editor</strong> :
+          </div>
+          <div style={{ background: "#1A1A1A", borderRadius: 6, padding: "10px 12px", fontSize: 11, color: "#A5D6A7", fontFamily: "monospace", lineHeight: 1.6, marginBottom: 8 }}>
+            {`CREATE POLICY "public read profiles"\nON profiles FOR SELECT\nUSING (true);\n\nCREATE POLICY "public read services"\nON services FOR SELECT\nUSING (true);`}
+          </div>
+          <button
+            onClick={() => {
+              const sql = `CREATE POLICY "public read profiles"\nON profiles FOR SELECT\nUSING (true);\n\nCREATE POLICY "public read services"\nON services FOR SELECT\nUSING (true);`;
+              navigator.clipboard?.writeText(sql);
+            }}
+            style={{ fontSize: 11, color: "#B45309", background: "none", border: "1px solid #F59E0B50", padding: "5px 12px", borderRadius: 4, cursor: "pointer", fontFamily: tb.fontBody }}
+          >
+            Copier le SQL
+          </button>
+        </div>
       </div>
     );
   }
