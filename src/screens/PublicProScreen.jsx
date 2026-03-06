@@ -272,7 +272,7 @@ export default function PublicProScreen({ slug }) {
     });
     setBooking(false);
     if (error) {
-      setBookError("Erreur lors de la réservation. Vérifiez les permissions Supabase (voir ci-dessous).");
+      setBookError(`Erreur: ${error.message || error.code || JSON.stringify(error)}`);
       console.error("doBook error:", error);
       return;
     }
