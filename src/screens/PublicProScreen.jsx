@@ -4,6 +4,25 @@ import { supabase } from "../supabase.js";
 import { T, FONTS } from "../themes.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
+const SQL_ALL_POLICIES = `-- 1. Lecture publique des profils (page pro visible sans compte)
+CREATE POLICY "public read profiles" ON profiles
+FOR SELECT USING (true);
+
+-- 2. Lecture publique des services (prestations visibles sans compte)
+CREATE POLICY "public read services" ON services
+FOR SELECT USING (true);
+
+-- 3. Les clients peuvent créer des réservations
+CREATE POLICY "clients can book" ON appointments
+FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = client_id);
+
+-- 4. Les pros voient leurs réservations, les clients voient les leurs
+CREATE POLICY "read own appointments" ON appointments
+FOR SELECT USING (
+  auth.uid() = pro_id OR auth.uid() = client_id
+);`;
+
 // Generate 30-min time slots from work_hours config for a given date
 function getSlots(workHours, date) {
   if (!workHours || !date) return [];
@@ -179,6 +198,7 @@ export default function PublicProScreen({ slug }) {
   const [showAuth, setShowAuth] = useState(false);
   const [booked, setBooked] = useState(false);
   const [booking, setBooking] = useState(false);
+  const [bookError, setBookError] = useState("");
 
   const STORAGE_KEY = `bf_pending_${slug}`;
   const t = pro ? (T[pro.theme_id] || T.beauty) : T.beauty;
@@ -238,7 +258,8 @@ export default function PublicProScreen({ slug }) {
     const uid = user?.id;
     if (!uid) return;
     setBooking(true);
-    await supabase.from("appointments").insert({
+    setBookError("");
+    const { error } = await supabase.from("appointments").insert({
       pro_id: pro.id,
       client_id: uid,
       client_name: user.email,
@@ -249,8 +270,13 @@ export default function PublicProScreen({ slug }) {
       price: pending.price,
       status: "pending",
     });
-    sessionStorage.removeItem(STORAGE_KEY);
     setBooking(false);
+    if (error) {
+      setBookError("Erreur lors de la réservation. Vérifiez les permissions Supabase (voir ci-dessous).");
+      console.error("doBook error:", error);
+      return;
+    }
+    sessionStorage.removeItem(STORAGE_KEY);
     setBooked(true);
     setShowAuth(false);
   };
@@ -298,14 +324,11 @@ export default function PublicProScreen({ slug }) {
           <div style={{ fontSize: 12, color: "#92400E", lineHeight: 1.6, marginBottom: 10 }}>
             Activez l'accès public dans <strong>Supabase → SQL Editor</strong> :
           </div>
-          <div style={{ background: "#1A1A1A", borderRadius: 6, padding: "10px 12px", fontSize: 11, color: "#A5D6A7", fontFamily: "monospace", lineHeight: 1.6, marginBottom: 8 }}>
-            {`CREATE POLICY "public read profiles"\nON profiles FOR SELECT\nUSING (true);\n\nCREATE POLICY "public read services"\nON services FOR SELECT\nUSING (true);`}
+          <div style={{ background: "#1A1A1A", borderRadius: 6, padding: "10px 12px", fontSize: 11, color: "#A5D6A7", fontFamily: "monospace", lineHeight: 1.6, marginBottom: 8, whiteSpace: "pre" }}>
+            {SQL_ALL_POLICIES}
           </div>
           <button
-            onClick={() => {
-              const sql = `CREATE POLICY "public read profiles"\nON profiles FOR SELECT\nUSING (true);\n\nCREATE POLICY "public read services"\nON services FOR SELECT\nUSING (true);`;
-              navigator.clipboard?.writeText(sql);
-            }}
+            onClick={() => navigator.clipboard?.writeText(SQL_ALL_POLICIES)}
             style={{ fontSize: 11, color: "#B45309", background: "none", border: "1px solid #F59E0B50", padding: "5px 12px", borderRadius: 4, cursor: "pointer", fontFamily: tb.fontBody }}
           >
             Copier le SQL
@@ -520,6 +543,11 @@ export default function PublicProScreen({ slug }) {
                 {selectedService.price}€
               </div>
             </div>
+            {bookError && (
+              <div style={{ background: "#FFF1F2", border: "1px solid #FDA4AF", borderRadius: t.rsm, padding: "12px 14px", marginBottom: 12, fontSize: 13, color: "#9F1239", lineHeight: 1.6 }}>
+                ⚠️ {bookError}
+              </div>
+            )}
             <button
               onClick={handleConfirm}
               disabled={booking}
