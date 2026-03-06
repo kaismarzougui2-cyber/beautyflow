@@ -1,51 +1,77 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase.js";
-import { T, FONTS } from "../themes.js";
+import { T } from "../themes.js";
 import CityAutocomplete from "../components/CityAutocomplete.jsx";
+
+const CATS = [
+  { id: "all",    label: "Tous",             icon: "🔍" },
+  { id: "beauty", label: "Coiffure & Beauté", icon: "🌸" },
+  { id: "barber", label: "Barbier",           icon: "✂️" },
+];
 
 export default function ExploreScreen() {
   const t = T.beauty;
   const navigate = useNavigate();
   const [city, setCity] = useState("");
+  const [cat, setCat] = useState("all");
   const [pros, setPros] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [error, setError] = useState("");
 
-  const search = async () => {
-    if (!city) return;
+  const search = async (overrideCity, overrideCat) => {
+    const searchCity = overrideCity !== undefined ? overrideCity : city;
+    const searchCat  = overrideCat  !== undefined ? overrideCat  : cat;
+    if (!searchCity) return;
     setLoading(true);
     setSearched(true);
-    const { data } = await supabase
+    setError("");
+
+    let query = supabase
       .from("profiles")
       .select("id, name, business_name, city, slug, theme_id, business_type")
-      .ilike("city", city)
-      .order("business_name");
-    setPros(data || []);
+      .ilike("city", searchCity);
+
+    if (searchCat !== "all") query = query.eq("theme_id", searchCat);
+
+    const { data, error: supaErr } = await query.order("business_name");
+
+    if (supaErr) {
+      // Likely an RLS issue — guide the user
+      setError("rls");
+      setPros([]);
+    } else {
+      setPros(data || []);
+    }
     setLoading(false);
+  };
+
+  const handleCatChange = (newCat) => {
+    setCat(newCat);
+    if (searched && city) search(city, newCat);
   };
 
   return (
     <div style={{ maxWidth: 430, margin: "0 auto", background: t.bg, minHeight: "100vh", fontFamily: t.fontBody }}>
-      <style>{`*{box-sizing:border-box;margin:0;padding:0;} @keyframes slideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}`}</style>
+      <style>{`
+        *{box-sizing:border-box;margin:0;padding:0;}
+        @keyframes slideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+      `}</style>
 
       {/* Hero */}
-      <div style={{
-        background: "linear-gradient(160deg,#FDE9F4,#FAF5F9)",
-        padding: "48px 24px 28px",
-        position: "relative", overflow: "hidden",
-      }}>
+      <div style={{ background: "linear-gradient(160deg,#FDE9F4,#FAF5F9)", padding: "48px 24px 28px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -30, right: -30, width: 140, height: 140, borderRadius: "50%", background: `${t.primary}10`, pointerEvents: "none" }} />
         <div style={{ fontSize: 44, marginBottom: 14 }}>✂️💅</div>
         <div style={{ fontFamily: t.font, fontSize: 30, fontWeight: 700, color: t.text, lineHeight: 1.1 }}>
           Trouvez votre pro
         </div>
         <div style={{ fontSize: 14, color: t.textMuted, marginTop: 6, lineHeight: 1.5 }}>
-          Salons de coiffure & barbiers — réservez en ligne, gratuitement.
+          Salons & barbiers — réservez en ligne, gratuitement.
         </div>
       </div>
 
-      {/* Search bar */}
+      {/* Search + filters */}
       <div style={{ padding: "20px 20px 0" }}>
         <div style={{ marginBottom: 10 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, marginBottom: 8, letterSpacing: "0.04em" }}>
@@ -53,8 +79,34 @@ export default function ExploreScreen() {
           </div>
           <CityAutocomplete t={t} value={city} onChange={setCity} placeholder="Ex: Paris, Lyon, Marseille..." />
         </div>
+
+        {/* Category pills */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 2 }}>
+          {CATS.map(c => {
+            const active = cat === c.id;
+            return (
+              <button
+                key={c.id}
+                onClick={() => handleCatChange(c.id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "7px 14px", border: `1.5px solid ${active ? t.primary : t.border}`,
+                  borderRadius: t.rpill, cursor: "pointer", whiteSpace: "nowrap",
+                  background: active ? t.primary : t.bgCard,
+                  color: active ? t.textInv : t.textMuted,
+                  fontFamily: t.fontBody, fontSize: 12, fontWeight: 700,
+                  transition: "all 0.2s",
+                }}
+              >
+                <span>{c.icon}</span>
+                <span>{c.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
         <button
-          onClick={search}
+          onClick={() => search()}
           disabled={!city || loading}
           style={{
             width: "100%", padding: "14px", borderRadius: t.rsm, border: "none",
@@ -70,22 +122,56 @@ export default function ExploreScreen() {
         </button>
       </div>
 
-      {/* Results */}
+      {/* Results / states */}
       <div style={{ padding: "20px 16px 80px" }}>
-        {searched && !loading && pros.length === 0 && (
+
+        {/* RLS error — prompt to add Supabase policy */}
+        {error === "rls" && (
+          <div style={{ background: "#FFF8E1", border: "1px solid #F59E0B40", borderRadius: t.r, padding: "16px", animation: "slideUp 0.25s ease" }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#B45309", marginBottom: 6 }}>
+              ⚙️ Accès public non configuré
+            </div>
+            <div style={{ fontSize: 13, color: "#92400E", lineHeight: 1.6, marginBottom: 12 }}>
+              La table <code style={{ background: "#FEF3C7", padding: "1px 5px", borderRadius: 4 }}>profiles</code> n'autorise pas encore les lectures publiques.
+              Ajoutez cette policy SQL dans Supabase pour activer la recherche sans connexion :
+            </div>
+            <div style={{ background: "#1E1E1E", borderRadius: 8, padding: "12px 14px", fontSize: 12, color: "#A5D6A7", fontFamily: "monospace", lineHeight: 1.6, overflowX: "auto" }}>
+              {`CREATE POLICY "public read profiles"\nON profiles FOR SELECT\nUSING (true);`}
+            </div>
+            <button
+              onClick={() => navigator.clipboard?.writeText(`CREATE POLICY "public read profiles"\nON profiles FOR SELECT\nUSING (true);`)}
+              style={{ marginTop: 10, fontSize: 12, color: t.primary, background: "none", border: `1px solid ${t.border}`, padding: "6px 12px", borderRadius: t.rsm, cursor: "pointer", fontFamily: t.fontBody }}
+            >
+              Copier le SQL
+            </button>
+          </div>
+        )}
+
+        {/* Empty results */}
+        {searched && !loading && error === "" && pros.length === 0 && (
           <div style={{ textAlign: "center", padding: "48px 0", animation: "slideUp 0.25s ease" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>😔</div>
             <div style={{ fontSize: 15, color: t.text, fontWeight: 600 }}>Aucun professionnel trouvé</div>
             <div style={{ fontSize: 13, color: t.textMuted, marginTop: 4 }}>
-              Essayez une ville voisine ou vérifiez l'orthographe.
+              Essayez une ville voisine ou une autre catégorie.
             </div>
+            {cat !== "all" && (
+              <button
+                onClick={() => handleCatChange("all")}
+                style={{ marginTop: 12, color: t.primary, background: "none", border: "none", cursor: "pointer", fontSize: 13, fontFamily: t.fontBody }}
+              >
+                Voir toutes les catégories
+              </button>
+            )}
           </div>
         )}
 
+        {/* Pro list */}
         {pros.length > 0 && (
           <div style={{ animation: "slideUp 0.25s ease" }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, letterSpacing: "0.04em", marginBottom: 12 }}>
               {pros.length} PROFESSIONNEL{pros.length > 1 ? "S" : ""} À {city.toUpperCase()}
+              {cat !== "all" && ` · ${CATS.find(c => c.id === cat)?.label.toUpperCase()}`}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {pros.map(pro => {
@@ -96,40 +182,24 @@ export default function ExploreScreen() {
                     key={pro.id}
                     onClick={() => navigate(`/pro/${pro.slug}`)}
                     style={{
-                      background: t.bgCard, borderRadius: t.r,
-                      border: `1px solid ${t.border}`, padding: "16px",
-                      cursor: "pointer", transition: "all 0.2s",
-                      boxShadow: t.shadow,
+                      background: t.bgCard, borderRadius: t.r, border: `1px solid ${t.border}`,
+                      padding: "16px", cursor: "pointer", transition: "all 0.2s", boxShadow: t.shadow,
                     }}
                     onMouseEnter={e => { e.currentTarget.style.boxShadow = t.shadowHover; e.currentTarget.style.transform = "translateY(-2px)"; }}
                     onMouseLeave={e => { e.currentTarget.style.boxShadow = t.shadow; e.currentTarget.style.transform = "none"; }}
                   >
                     <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                      <div style={{
-                        width: 52, height: 52, borderRadius: t.rsm,
-                        background: pt.heroGrad,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 24, flexShrink: 0,
-                      }}>
+                      <div style={{ width: 52, height: 52, borderRadius: t.rsm, background: pt.heroGrad, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>
                         {isBarber ? "✂️" : "🌸"}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 700, fontSize: 15, color: t.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {pro.business_name || pro.name}
                         </div>
-                        <div style={{ fontSize: 12, color: t.textMuted, marginTop: 3 }}>
-                          📍 {pro.city}
-                        </div>
-                        <div style={{ marginTop: 6 }}>
-                          <span style={{
-                            fontSize: 10, fontWeight: 700, padding: "2px 8px",
-                            borderRadius: t.rpill, letterSpacing: "0.04em",
-                            background: isBarber ? "#E8A02015" : `${t.primary}12`,
-                            color: isBarber ? "#E8A020" : t.primary,
-                          }}>
-                            {isBarber ? "✂️ Barbier" : "🌸 Beauté & Coiffure"}
-                          </span>
-                        </div>
+                        <div style={{ fontSize: 12, color: t.textMuted, marginTop: 3 }}>📍 {pro.city}</div>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: t.rpill, letterSpacing: "0.04em", background: isBarber ? "#E8A02015" : `${t.primary}12`, color: isBarber ? "#E8A020" : t.primary, display: "inline-block", marginTop: 5 }}>
+                          {isBarber ? "✂️ Barbier" : "🌸 Beauté & Coiffure"}
+                        </span>
                       </div>
                       <div style={{ color: t.primary, fontSize: 20, fontWeight: 700 }}>›</div>
                     </div>
@@ -140,6 +210,7 @@ export default function ExploreScreen() {
           </div>
         )}
 
+        {/* How it works (initial state) */}
         {!searched && (
           <div style={{ marginTop: 12 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, letterSpacing: "0.04em", marginBottom: 12 }}>
@@ -147,15 +218,12 @@ export default function ExploreScreen() {
             </div>
             {[
               ["🔍", "Cherchez par ville", "Entrez votre ville pour voir les pros disponibles"],
-              ["📅", "Choisissez un créneau", "Parcourez les services et les horaires disponibles"],
-              ["✓", "Réservez en 30 secondes", "Créez un compte et confirmez votre RDV instantanément"],
+              ["🌸✂️", "Filtrez par catégorie", "Beauté & coiffure ou barbier — au choix"],
+              ["📅", "Choisissez un créneau", "Parcourez les services et horaires disponibles"],
+              ["✓",  "Réservez en 30 secondes", "Créez un compte et confirmez votre RDV instantanément"],
             ].map(([icon, title, sub]) => (
               <div key={title} style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: t.rsm,
-                  background: `${t.primary}12`, display: "flex", alignItems: "center",
-                  justifyContent: "center", fontSize: 18, flexShrink: 0,
-                }}>
+                <div style={{ width: 40, height: 40, borderRadius: t.rsm, background: `${t.primary}12`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
                   {icon}
                 </div>
                 <div>
