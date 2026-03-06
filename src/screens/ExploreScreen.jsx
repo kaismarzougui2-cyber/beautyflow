@@ -42,7 +42,8 @@ export default function ExploreScreen() {
       setError("rls");
       setPros([]);
     } else {
-      setPros(data || []);
+      // Only show pros that have a valid slug (public page configured)
+      setPros((data || []).filter(p => p.slug && p.slug !== "null" && p.slug !== "undefined"));
     }
     setLoading(false);
   };

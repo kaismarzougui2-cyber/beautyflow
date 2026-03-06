@@ -4,6 +4,13 @@ import { useAuth } from "../context/AuthContext.jsx";
 import Card from "../components/Card.jsx";
 import Btn from "../components/Btn.jsx";
 
+const makeSlug = (name) =>
+  (name || "mon-salon")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    || "mon-salon";
+
 const SQL_PROFILES = `CREATE POLICY "public read profiles"
 ON profiles FOR SELECT
 USING (true);`;
@@ -35,14 +42,14 @@ function CopyBox({ t, text, label }) {
 }
 
 export default function PublicPageScreen({ t, onGoToServices, onGoToSettings }) {
-  const { user, profile } = useAuth();
+  const { user, profile, saveProfile } = useAuth();
   const [services, setServices] = useState([]);
   const [pendingBookings, setPendingBookings] = useState([]);
   const [sqlCopied, setSqlCopied] = useState(null);
   const [rlsOk, setRlsOk] = useState(null); // null=checking, true=ok, false=blocked
 
-  const slug = profile?.slug || "mon-salon";
-  const publicUrl = `beautyflow.app/${slug}`;
+  const slug = profile?.slug && profile.slug !== "null" ? profile.slug : null;
+  const publicUrl = slug ? `beautyflow.app/${slug}` : null;
 
   useEffect(() => {
     if (!user) return;
@@ -76,6 +83,7 @@ export default function PublicPageScreen({ t, onGoToServices, onGoToSettings }) 
   const inactiveServices = services.filter(s => s.active === false);
 
   const hasWorkHours = profile?.work_hours && Object.values(profile.work_hours).some(d => d?.active);
+  const [generatingSlug, setGeneratingSlug] = useState(false);
 
   return (
     <div style={{ minHeight: "100vh", background: t.bg, paddingBottom: 100 }}>
@@ -92,8 +100,41 @@ export default function PublicPageScreen({ t, onGoToServices, onGoToSettings }) 
 
       <div style={{ padding: "16px" }}>
 
-        {/* Public URL card */}
-        <Card t={t} style={{ padding: "18px", marginBottom: 14, border: `2px solid ${t.primary}30`, background: `${t.primary}06` }}>
+        {/* No slug banner — action required */}
+        {!slug && (
+          <div style={{ background: "#FFF1F2", border: "1.5px solid #FDA4AF", borderRadius: t.r, padding: "16px", marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#9F1239", marginBottom: 6 }}>
+              ⚠️ Votre page publique n'est pas encore active
+            </div>
+            <div style={{ fontSize: 13, color: "#BE123C", lineHeight: 1.6, marginBottom: 12 }}>
+              Votre profil n'a pas d'URL unique. Cliquez ci-dessous pour en générer une automatiquement depuis le nom de votre établissement.
+            </div>
+            {profile?.business_name ? (
+              <button
+                disabled={generatingSlug}
+                onClick={async () => {
+                  setGeneratingSlug(true);
+                  const newSlug = makeSlug(profile.business_name);
+                  await saveProfile({ slug: newSlug });
+                  window.location.reload();
+                }}
+                style={{ padding: "10px 18px", borderRadius: t.rsm, border: "none", background: "#C2185B", color: "#fff", fontFamily: t.fontBody, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+              >
+                {generatingSlug ? "Génération..." : `Générer mon lien → beautyflow.app/${makeSlug(profile.business_name)}`}
+              </button>
+            ) : (
+              <button
+                onClick={onGoToSettings}
+                style={{ padding: "10px 18px", borderRadius: t.rsm, border: "none", background: "#C2185B", color: "#fff", fontFamily: t.fontBody, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+              >
+                Définir le nom de mon établissement →
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Public URL card — only if slug exists */}
+        {slug && <Card t={t} style={{ padding: "18px", marginBottom: 14, border: `2px solid ${t.primary}30`, background: `${t.primary}06` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
             <div style={{ width: 38, height: 38, borderRadius: t.rsm, background: t.heroGrad, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
               🌐
@@ -127,7 +168,7 @@ export default function PublicPageScreen({ t, onGoToServices, onGoToSettings }) 
               📤 Partager
             </button>
           </div>
-        </Card>
+        </Card>}
 
         {/* RLS status + fix */}
         {rlsOk === false && (

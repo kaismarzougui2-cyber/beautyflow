@@ -10,6 +10,13 @@ import { useAuth } from "../context/AuthContext.jsx";
 
 const initials = (name) => (name || "?").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
+const generateSlug = (name) =>
+  (name || "pro")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    || "pro";
+
 const DEFAULT_WORK_HOURS = [
   { active: true,  start: "09:00", end: "18:00", breaks: [] },
   { active: true,  start: "09:00", end: "18:00", breaks: [] },
@@ -61,7 +68,9 @@ export default function SettingsScreen({ t, proType, currentTheme }) {
 
   const handleSaveProfile = async () => {
     setSaving(true);
-    await saveProfile(editForm);
+    // Always ensure slug is set — generate from business_name if missing
+    const slug = profile?.slug || generateSlug(editForm.business_name);
+    await saveProfile({ ...editForm, slug });
     setSaving(false);
     setShowEditProfile(false);
   };
