@@ -26,6 +26,7 @@ export default function DashboardScreen({ t, proName, proType, onGoToPage }) {
   const [stats, setStats] = useState({ rev: 0, apts: 0, noShow: 0 });
   const isB = t.id === "beauty";
   const slug = profile?.slug || "mon-salon";
+  const publicProUrl = `${window.location.origin}/pro/${slug}`;
 
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 60);
@@ -77,12 +78,11 @@ export default function DashboardScreen({ t, proName, proType, onGoToPage }) {
   };
 
   const handleCopy = () => {
-    const url = `beautyflow.app/${slug}`;
-    if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
+    if (navigator.clipboard) navigator.clipboard.writeText(publicProUrl).catch(() => {});
     else {
       // fallback for older browsers
       const el = document.createElement("textarea");
-      el.value = url; document.body.appendChild(el); el.select();
+      el.value = publicProUrl; document.body.appendChild(el); el.select();
       document.execCommand("copy"); document.body.removeChild(el);
     }
     setCopied(true);
@@ -139,7 +139,7 @@ export default function DashboardScreen({ t, proName, proType, onGoToPage }) {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ flex: 1, background: isB ? "#FFF0F8" : "#0A1220", borderRadius: t.rsm, padding: "8px 12px", overflow: "hidden" }}>
               <span style={{ fontSize: 13, color: t.primary, fontFamily: t.fontBody, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
-                beautyflow.app/{slug}
+                {publicProUrl}
               </span>
             </div>
             <Btn t={t} size="sm" variant="soft" onClick={e => { e.stopPropagation(); handleCopy(); }} style={{ flexShrink: 0 }}>
