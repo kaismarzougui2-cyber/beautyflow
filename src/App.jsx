@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, useParams } from "react-router-dom";
+import { Routes, Route, useParams, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { T, FONTS } from "./themes.js";
 import DashboardScreen from "./screens/DashboardScreen.jsx";
@@ -52,8 +52,9 @@ function AppShell() {
   // Not logged in
   if (!user) return <LoginScreen />;
 
-  // Logged in but no profile yet
-  if (!profile) return <OnboardingScreen />;
+  // Logged in but no profile → could be a client who ended up here
+  if (!profile) return <ClientEscapeScreen />;
+
 
   return (
     <div style={{ maxWidth: 430, margin: "0 auto", background: t.bg, minHeight: "100vh", position: "relative", overflowX: "hidden", fontFamily: t.fontBody }}>
@@ -92,6 +93,41 @@ function AppShell() {
   );
 }
 
+// Screen shown to logged-in users with no pro profile (clients who land on /)
+function ClientEscapeScreen() {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const t = T.beauty;
+  return (
+    <div style={{ maxWidth: 430, margin: "0 auto", background: t.bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", fontFamily: t.fontBody, gap: 16 }}>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0;}`}</style>
+      <div style={{ fontSize: 52 }}>💅</div>
+      <div style={{ fontFamily: t.font, fontSize: 26, fontWeight: 700, color: t.text, textAlign: "center" }}>
+        Vous êtes connecté
+      </div>
+      <div style={{ fontSize: 14, color: t.textMuted, textAlign: "center", lineHeight: 1.6 }}>
+        Vous n'avez pas encore de profil professionnel.<br />
+        Voulez-vous réserver chez un pro ou configurer votre compte ?
+      </div>
+      <button
+        onClick={() => navigate("/explore")}
+        style={{ width: "100%", maxWidth: 300, padding: "14px", borderRadius: t.rsm, border: "none", background: t.primary, color: t.textInv, fontFamily: t.fontBody, fontWeight: 700, fontSize: 15, cursor: "pointer", boxShadow: `0 4px 20px ${t.primaryGlow}` }}
+      >
+        Trouver un pro → Explorer
+      </button>
+      <button
+        onClick={() => navigate("/onboarding")}
+        style={{ width: "100%", maxWidth: 300, padding: "13px", borderRadius: t.rsm, border: `1.5px solid ${t.border}`, background: "transparent", color: t.text, fontFamily: t.fontBody, fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+      >
+        Créer mon profil professionnel
+      </button>
+      <button onClick={signOut} style={{ fontSize: 13, color: t.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: t.fontBody, marginTop: 4 }}>
+        Se déconnecter
+      </button>
+    </div>
+  );
+}
+
 // Wrapper to extract slug param from URL
 function PublicProRoute() {
   const { slug } = useParams();
@@ -104,6 +140,7 @@ export default function BeautyFlowPro() {
       <Routes>
         <Route path="/explore" element={<ExploreScreen />} />
         <Route path="/pro/:slug" element={<PublicProRoute />} />
+        <Route path="/onboarding" element={<OnboardingScreen />} />
         <Route path="*" element={<AppShell />} />
       </Routes>
     </AuthProvider>
