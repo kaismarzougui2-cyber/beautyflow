@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { T } from "../themes.js";
+import CityAutocomplete from "../components/CityAutocomplete.jsx";
 
 export default function OnboardingScreen() {
   const { saveProfile } = useAuth();
@@ -92,7 +93,7 @@ export default function OnboardingScreen() {
             Ces infos apparaîtront sur votre page de réservation publique.
           </div>
 
-          {[["NOM DE L'ETABLISSEMENT", "businessName", "Salon de Coiffure Marie"], ["VILLE", "city", "Paris"], ["TELEPHONE", "phone", "06 xx xx xx xx"]].map(([label, key, ph]) => (
+          {[["NOM DE L'ETABLISSEMENT", "businessName", "Salon de Coiffure Marie"], ["TELEPHONE", "phone", "06 xx xx xx xx"]].map(([label, key, ph]) => (
             <div key={key} style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, marginBottom: 8, letterSpacing: "0.04em" }}>{label}</div>
               <input value={form[key]} onChange={e => set(key, e.target.value)} placeholder={ph} style={inpStyle}
@@ -100,6 +101,10 @@ export default function OnboardingScreen() {
                 onBlur={e => e.target.style.borderColor = t.border} />
             </div>
           ))}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, marginBottom: 8, letterSpacing: "0.04em" }}>VILLE</div>
+            <CityAutocomplete t={t} value={form.city} onChange={v => set("city", v)} placeholder="Ex: Paris" />
+          </div>
 
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <button onClick={() => setStep(1)}

@@ -79,8 +79,14 @@ export default function DashboardScreen({ t, proName, proType }) {
   const handleCopy = () => {
     const url = `beautyflow.app/${slug}`;
     if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
+    else {
+      // fallback for older browsers
+      const el = document.createElement("textarea");
+      el.value = url; document.body.appendChild(el); el.select();
+      document.execCommand("copy"); document.body.removeChild(el);
+    }
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   const todayStr = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
@@ -94,6 +100,19 @@ export default function DashboardScreen({ t, proName, proType }) {
 
   return (
     <div style={{ paddingBottom: 80 }}>
+      {/* Toast notification */}
+      <div style={{
+        position: "fixed", bottom: 88, left: "50%", transform: `translateX(-50%) translateY(${copied ? "0" : "20px"})`,
+        background: isB ? "#C2185B" : "#E8A020", color: "#fff",
+        padding: "10px 20px", borderRadius: t.rpill,
+        fontSize: 13, fontFamily: t.fontBody, fontWeight: 700,
+        boxShadow: `0 8px 32px ${t.primaryGlow}`,
+        opacity: copied ? 1 : 0, transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+        zIndex: 500, pointerEvents: "none", whiteSpace: "nowrap",
+        display: "flex", alignItems: "center", gap: 8,
+      }}>
+        <span>✓</span> Lien copié dans le presse-papiers !
+      </div>
       {/* Hero header */}
       <div style={{ padding: "20px 20px 16px", background: isB ? "linear-gradient(160deg,#FDE9F4,#FAF5F9)" : "linear-gradient(160deg,#0D1525,#080D18)", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: `${t.primary}10`, pointerEvents: "none" }} />
@@ -109,13 +128,21 @@ export default function DashboardScreen({ t, proName, proType }) {
             <Av init={initials(proName)} size={48} t={t} style={{ border: `2.5px solid ${t.bgCard}` }} />
           )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: t.bgCard, borderRadius: t.rsm, padding: "10px 14px", border: `1px solid ${t.border}` }}>
-          <span style={{ fontSize: 13, color: t.primary, fontFamily: t.fontBody, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            beautyflow.app/{slug}
-          </span>
-          <Btn t={t} size="sm" variant="soft" onClick={handleCopy}>
-            {copied ? "✓ Copié !" : "Copier 🔗"}
-          </Btn>
+        {/* Share link card */}
+        <div style={{ background: t.bgCard, borderRadius: t.r, padding: "12px 14px", border: `1px solid ${t.border}`, boxShadow: t.shadow }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+            🔗 Votre lien de réservation
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ flex: 1, background: isB ? "#FFF0F8" : "#0A1220", borderRadius: t.rsm, padding: "8px 12px", overflow: "hidden" }}>
+              <span style={{ fontSize: 13, color: t.primary, fontFamily: t.fontBody, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+                beautyflow.app/{slug}
+              </span>
+            </div>
+            <Btn t={t} size="sm" variant={copied ? "ghost" : "soft"} onClick={handleCopy} style={{ flexShrink: 0 }}>
+              {copied ? "✓ Copié !" : "Copier"}
+            </Btn>
+          </div>
         </div>
       </div>
 

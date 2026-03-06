@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Routes, Route, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { T, FONTS } from "./themes.js";
 import DashboardScreen from "./screens/DashboardScreen.jsx";
@@ -8,6 +9,8 @@ import ServicesScreen from "./screens/ServicesScreen.jsx";
 import SettingsScreen from "./screens/SettingsScreen.jsx";
 import LoginScreen from "./screens/LoginScreen.jsx";
 import OnboardingScreen from "./screens/OnboardingScreen.jsx";
+import ExploreScreen from "./screens/ExploreScreen.jsx";
+import PublicProScreen from "./screens/PublicProScreen.jsx";
 
 const NAV = [
   { id: "dashboard", icon: "📊", label: "Dashboard" },
@@ -89,10 +92,20 @@ function AppShell() {
   );
 }
 
+// Wrapper to extract slug param from URL
+function PublicProRoute() {
+  const { slug } = useParams();
+  return <PublicProScreen slug={slug} />;
+}
+
 export default function BeautyFlowPro() {
   return (
     <AuthProvider>
-      <AppShell />
+      <Routes>
+        <Route path="/explore" element={<ExploreScreen />} />
+        <Route path="/pro/:slug" element={<PublicProRoute />} />
+        <Route path="*" element={<AppShell />} />
+      </Routes>
     </AuthProvider>
   );
 }

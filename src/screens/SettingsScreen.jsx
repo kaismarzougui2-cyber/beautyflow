@@ -3,6 +3,7 @@ import Av from "../components/Av.jsx";
 import Btn from "../components/Btn.jsx";
 import Modal from "../components/Modal.jsx";
 import Input from "../components/Input.jsx";
+import CityAutocomplete from "../components/CityAutocomplete.jsx";
 import { Toggle } from "../components/Toggle.jsx";
 import { T } from "../themes.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -224,7 +225,10 @@ export default function SettingsScreen({ t, proType, currentTheme }) {
         <Modal t={t} title="Modifier le profil" onClose={() => setShowEditProfile(false)}>
           <Input t={t} label="NOM COMPLET" value={editForm.name} onChange={e => setEF("name", e.target.value)} placeholder="Marie Dupont" />
           <Input t={t} label="NOM DE L'ETABLISSEMENT" value={editForm.business_name} onChange={e => setEF("business_name", e.target.value)} placeholder="Salon de Coiffure Marie" />
-          <Input t={t} label="VILLE" value={editForm.city} onChange={e => setEF("city", e.target.value)} placeholder="Paris" />
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, marginBottom: 8, letterSpacing: "0.04em" }}>VILLE</div>
+            <CityAutocomplete t={t} value={editForm.city} onChange={v => setEF("city", v)} placeholder="Ex: Paris" />
+          </div>
           <Input t={t} label="TELEPHONE" value={editForm.phone} onChange={e => setEF("phone", e.target.value)} placeholder="06 xx xx xx xx" />
           <Btn t={t} style={{ width: "100%", padding: "13px", marginTop: 4 }} onClick={handleSaveProfile} disabled={saving}>
             {saving ? "Enregistrement..." : "Enregistrer ✓"}
