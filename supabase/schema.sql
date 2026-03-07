@@ -46,7 +46,7 @@ create table if not exists public.services (
 create table if not exists public.appointments (
   id           uuid primary key default gen_random_uuid(),
   pro_id       uuid not null references public.profiles(id) on delete cascade,
-  client_id    uuid references public.clients(id) on delete set null,
+  client_id    uuid references auth.users(id) on delete set null,
   client_name  text not null,
   service_id   uuid references public.services(id) on delete set null,
   service_name text default '',
