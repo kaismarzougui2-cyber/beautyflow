@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, useParams, useNavigate } from "react-router-dom";
+import { Routes, Route, useParams, useNavigate, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { T, FONTS } from "./themes.js";
 import DashboardScreen from "./screens/DashboardScreen.jsx";
@@ -22,8 +22,27 @@ const NAV = [
   { id: "settings",  icon: "⚙️", label: "Réglages" },
 ];
 
+// Shared loading screen
+function LoadingScreen() {
+  const tb = T.beauty;
+  return (
+    <div style={{ maxWidth: 430, margin: "0 auto", background: tb.bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, fontFamily: tb.fontBody }}>
+      <style>{`@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}} @keyframes spin{to{transform:rotate(360deg);}}`}</style>
+      <div style={{ position: "relative", width: 72, height: 72 }}>
+        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `3px solid ${tb.primary}20` }} />
+        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "3px solid transparent", borderTopColor: tb.primary, animation: "spin 0.9s linear infinite" }} />
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>✂️</div>
+      </div>
+      <div style={{ fontSize: 13, color: tb.textMuted, animation: "pulse 1.5s ease-in-out infinite", letterSpacing: "0.06em", fontWeight: 600 }}>
+        BEAUTYFLOW
+      </div>
+    </div>
+  );
+}
+
+// Pro dashboard — only reachable if role='pro' AND has a profile
 function AppShell() {
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
   const [screen, setScreen] = useState("dashboard");
 
   const themeId = profile?.theme_id || "beauty";
@@ -41,31 +60,6 @@ function AppShell() {
       document.head.appendChild(l);
     }
   }, [themeId]);
-
-  // Loading
-  if (user === undefined) {
-    const tb = T.beauty;
-    return (
-      <div style={{ maxWidth: 430, margin: "0 auto", background: tb.bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, fontFamily: tb.fontBody }}>
-        <style>{`@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}} @keyframes spin{to{transform:rotate(360deg);}}`}</style>
-        <div style={{ position: "relative", width: 72, height: 72 }}>
-          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `3px solid ${tb.primary}20` }} />
-          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `3px solid transparent`, borderTopColor: tb.primary, animation: "spin 0.9s linear infinite" }} />
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>✂️</div>
-        </div>
-        <div style={{ fontSize: 13, color: tb.textMuted, animation: "pulse 1.5s ease-in-out infinite", letterSpacing: "0.06em", fontWeight: 600 }}>
-          BEAUTYFLOW
-        </div>
-      </div>
-    );
-  }
-
-  // Not logged in
-  if (!user) return <LoginScreen />;
-
-  // Logged in but no profile → could be a client who ended up here
-  if (!profile) return <ClientEscapeScreen />;
-
 
   return (
     <div style={{ maxWidth: 430, margin: "0 auto", background: t.bg, minHeight: "100vh", position: "relative", overflowX: "hidden", fontFamily: t.fontBody }}>
@@ -105,39 +99,64 @@ function AppShell() {
   );
 }
 
-// Screen shown to logged-in users with no pro profile (clients who land on /)
-function ClientEscapeScreen() {
-  const { signOut } = useAuth();
+/**
+ * Central routing guard — handles the catch-all "*" route.
+ *
+ * role = user_metadata.role  (set at signup)
+ *   'client' → always go to /explore (client interface)
+ *   'pro'    → pro interface or onboarding if no profile yet
+ *   undefined (legacy) → infer from profile presence
+ */
+function AppRouter() {
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const t = T.beauty;
-  return (
-    <div style={{ maxWidth: 430, margin: "0 auto", background: t.bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", fontFamily: t.fontBody, gap: 16 }}>
-      <style>{`*{box-sizing:border-box;margin:0;padding:0;}`}</style>
-      <div style={{ fontSize: 52 }}>💅</div>
-      <div style={{ fontFamily: t.font, fontSize: 26, fontWeight: 700, color: t.text, textAlign: "center" }}>
-        Vous êtes connecté
-      </div>
-      <div style={{ fontSize: 14, color: t.textMuted, textAlign: "center", lineHeight: 1.6 }}>
-        Vous n'avez pas encore de profil professionnel.<br />
-        Voulez-vous réserver chez un pro ou configurer votre compte ?
-      </div>
-      <button
-        onClick={() => navigate("/explore")}
-        style={{ width: "100%", maxWidth: 300, padding: "14px", borderRadius: t.rsm, border: "none", background: t.primary, color: t.textInv, fontFamily: t.fontBody, fontWeight: 700, fontSize: 15, cursor: "pointer", boxShadow: `0 4px 20px ${t.primaryGlow}` }}
-      >
-        Trouver un pro → Explorer
-      </button>
-      <button
-        onClick={() => navigate("/onboarding")}
-        style={{ width: "100%", maxWidth: 300, padding: "13px", borderRadius: t.rsm, border: `1.5px solid ${t.border}`, background: "transparent", color: t.text, fontFamily: t.fontBody, fontWeight: 600, fontSize: 14, cursor: "pointer" }}
-      >
-        Créer mon profil professionnel
-      </button>
-      <button onClick={signOut} style={{ fontSize: 13, color: t.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: t.fontBody, marginTop: 4 }}>
-        Se déconnecter
-      </button>
-    </div>
-  );
+
+  // Still loading auth state
+  if (user === undefined) return <LoadingScreen />;
+
+  // Not authenticated → login
+  if (!user) return <LoginScreen />;
+
+  const role = user.user_metadata?.role;
+
+  // ── CLIENT account ──────────────────────────────────────────────────────
+  // Client accounts are never allowed into the pro interface.
+  if (role === "client") {
+    return <Navigate to="/explore" replace />;
+  }
+
+  // ── PRO account (role='pro' or legacy without role but has profile) ─────
+  // No profile yet → onboarding
+  if (!profile) {
+    // Legacy accounts with no role: give them a choice
+    if (!role) {
+      return (
+        <div style={{ maxWidth: 430, margin: "0 auto", background: t.bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", fontFamily: t.fontBody, gap: 16 }}>
+          <style>{`*{box-sizing:border-box;margin:0;padding:0;}`}</style>
+          <div style={{ fontSize: 52 }}>✂️💅</div>
+          <div style={{ fontFamily: t.font, fontSize: 22, fontWeight: 700, color: t.text, textAlign: "center" }}>Quel type de compte ?</div>
+          <div style={{ fontSize: 14, color: t.textMuted, textAlign: "center", lineHeight: 1.6 }}>
+            Votre compte a été créé avant la séparation client/pro.<br />Choisissez votre espace :
+          </div>
+          <button onClick={() => navigate("/explore")} style={{ width: "100%", maxWidth: 300, padding: "14px", borderRadius: t.rsm, border: "none", background: t.primary, color: t.textInv, fontFamily: t.fontBody, fontWeight: 700, fontSize: 15, cursor: "pointer", boxShadow: `0 4px 20px ${t.primaryGlow}` }}>
+            💅 Accéder à l'espace client
+          </button>
+          <button onClick={() => navigate("/onboarding")} style={{ width: "100%", maxWidth: 300, padding: "13px", borderRadius: t.rsm, border: `1.5px solid ${t.border}`, background: "transparent", color: t.text, fontFamily: t.fontBody, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+            ✂️ Configurer mon compte professionnel
+          </button>
+          <button onClick={signOut} style={{ fontSize: 13, color: t.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: t.fontBody, marginTop: 4 }}>
+            Se déconnecter
+          </button>
+        </div>
+      );
+    }
+    // role='pro', no profile → onboarding
+    return <OnboardingScreen />;
+  }
+
+  // ── PRO with profile → dashboard ────────────────────────────────────────
+  return <AppShell />;
 }
 
 // Wrapper to extract slug param from URL
@@ -150,11 +169,11 @@ export default function BeautyFlowPro() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/explore" element={<ExploreScreen />} />
-        <Route path="/pro/:slug" element={<PublicProRoute />} />
-        <Route path="/confirm/:token" element={<ConfirmBookingScreen />} />
-        <Route path="/onboarding" element={<OnboardingScreen />} />
-        <Route path="*" element={<AppShell />} />
+        <Route path="/explore"          element={<ExploreScreen />} />
+        <Route path="/pro/:slug"        element={<PublicProRoute />} />
+        <Route path="/confirm/:token"   element={<ConfirmBookingScreen />} />
+        <Route path="/onboarding"       element={<OnboardingScreen />} />
+        <Route path="*"                 element={<AppRouter />} />
       </Routes>
     </AuthProvider>
   );

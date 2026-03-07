@@ -31,8 +31,9 @@ export function AuthProvider({ children }) {
   const signIn = (email, password) =>
     supabase.auth.signInWithPassword({ email, password });
 
-  const signUp = (email, password) =>
-    supabase.auth.signUp({ email, password });
+  // role: 'pro' | 'client'
+  const signUp = (email, password, role = "pro") =>
+    supabase.auth.signUp({ email, password, options: { data: { role } } });
 
   const signOut = () => supabase.auth.signOut();
 

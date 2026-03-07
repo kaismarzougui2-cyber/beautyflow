@@ -101,8 +101,42 @@ function ClientAppointments({ t, user }) {
     return `${DAYS[date.getDay()]} ${parseInt(day)} ${MONTHS[parseInt(m) - 1]}`;
   };
 
-  if (loading) return null;
-  if (apts.length === 0) return null;
+  if (loading) {
+    return (
+      <div style={{ padding: "0 16px 8px" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, letterSpacing: "0.04em", marginBottom: 12 }}>MES RDV CETTE SEMAINE</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {[1, 2].map(i => {
+            const pulse = { background: `linear-gradient(90deg,${t.bgCard} 25%,${t.bgMuted} 50%,${t.bgCard} 75%)`, backgroundSize: "200% 100%", animation: "shimmer 1.4s ease-in-out infinite", borderRadius: t.rsm };
+            return (
+              <div key={i} style={{ background: t.bgCard, borderRadius: t.r, border: `1px solid ${t.border}`, padding: "14px 16px" }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 7 }}>
+                    <div style={{ height: 13, width: "55%", ...pulse }} />
+                    <div style={{ height: 11, width: "40%", ...pulse }} />
+                  </div>
+                  <div style={{ height: 22, width: 70, borderRadius: t.rpill, ...pulse }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (apts.length === 0) {
+    return (
+      <div style={{ padding: "0 16px 8px" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, letterSpacing: "0.04em", marginBottom: 10 }}>MES RDV CETTE SEMAINE</div>
+        <div style={{ background: t.bgCard, borderRadius: t.r, border: `1px solid ${t.border}`, padding: "18px 16px", textAlign: "center" }}>
+          <div style={{ fontSize: 28, marginBottom: 8 }}>📅</div>
+          <div style={{ fontSize: 14, color: t.text, fontWeight: 600, marginBottom: 4 }}>Aucun RDV cette semaine</div>
+          <div style={{ fontSize: 12, color: t.textMuted }}>Cherchez un pro ci-dessous pour réserver.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "0 16px 8px", animation: "slideUp 0.25s ease" }}>
@@ -176,8 +210,8 @@ export default function ExploreScreen() {
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
 
-  // Show appointments only for clients (logged in but no pro profile)
-  const isClient = user && !profile;
+  // Show appointments for any logged-in user on the explore page
+  const isClient = !!user;
 
   const search = async (overrideCity, overrideCat) => {
     const searchCity = overrideCity !== undefined ? overrideCity : city;
