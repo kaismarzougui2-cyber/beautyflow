@@ -43,9 +43,18 @@ function AppShell() {
 
   // Loading
   if (user === undefined) {
+    const tb = T.beauty;
     return (
-      <div style={{ maxWidth: 430, margin: "0 auto", background: T.beauty.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontSize: 36 }}>✂️</div>
+      <div style={{ maxWidth: 430, margin: "0 auto", background: tb.bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, fontFamily: tb.fontBody }}>
+        <style>{`@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}} @keyframes spin{to{transform:rotate(360deg);}}`}</style>
+        <div style={{ position: "relative", width: 72, height: 72 }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `3px solid ${tb.primary}20` }} />
+          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `3px solid transparent`, borderTopColor: tb.primary, animation: "spin 0.9s linear infinite" }} />
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>✂️</div>
+        </div>
+        <div style={{ fontSize: 13, color: tb.textMuted, animation: "pulse 1.5s ease-in-out infinite", letterSpacing: "0.06em", fontWeight: 600 }}>
+          BEAUTYFLOW
+        </div>
       </div>
     );
   }

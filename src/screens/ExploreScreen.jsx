@@ -10,6 +10,25 @@ const CATS = [
   { id: "barber", label: "Barbier",           icon: "✂️" },
 ];
 
+function ProSkeleton({ t }) {
+  const pulse = {
+    background: `linear-gradient(90deg, ${t.bgCard} 25%, ${t.bgMuted} 50%, ${t.bgCard} 75%)`,
+    backgroundSize: "200% 100%",
+    animation: "shimmer 1.4s ease-in-out infinite",
+    borderRadius: t.rsm,
+  };
+  return (
+    <div style={{ background: t.bgCard, borderRadius: t.r, border: `1px solid ${t.border}`, padding: "16px", display: "flex", gap: 14, alignItems: "center" }}>
+      <div style={{ width: 52, height: 52, borderRadius: t.rsm, flexShrink: 0, ...pulse }} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ height: 14, width: "60%", ...pulse }} />
+        <div style={{ height: 11, width: "40%", ...pulse }} />
+        <div style={{ height: 18, width: 80, borderRadius: t.rpill, ...pulse }} />
+      </div>
+    </div>
+  );
+}
+
 export default function ExploreScreen() {
   const t = T.beauty;
   const navigate = useNavigate();
@@ -38,11 +57,9 @@ export default function ExploreScreen() {
     const { data, error: supaErr } = await query.order("business_name");
 
     if (supaErr) {
-      // Likely an RLS issue — guide the user
       setError("rls");
       setPros([]);
     } else {
-      // Only show pros that have a valid slug (public page configured)
       setPros((data || []).filter(p => p.slug && p.slug !== "null" && p.slug !== "undefined"));
     }
     setLoading(false);
@@ -58,12 +75,35 @@ export default function ExploreScreen() {
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0;}
         @keyframes slideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+        @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+        @keyframes spin{to{transform:rotate(360deg);}}
       `}</style>
 
       {/* Hero */}
       <div style={{ background: "linear-gradient(160deg,#FDE9F4,#FAF5F9)", padding: "48px 24px 28px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -30, right: -30, width: 140, height: 140, borderRadius: "50%", background: `${t.primary}10`, pointerEvents: "none" }} />
-        <div style={{ fontSize: 44, marginBottom: 14 }}>✂️💅</div>
+
+        {/* Back button */}
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            position: "absolute", top: 16, left: 16,
+            display: "flex", alignItems: "center", gap: 6,
+            background: "rgba(255,255,255,0.85)", backdropFilter: "blur(8px)",
+            border: `1px solid ${t.border}`, borderRadius: t.rpill,
+            padding: "6px 14px 6px 10px", cursor: "pointer",
+            fontSize: 13, fontWeight: 600, color: t.text,
+            fontFamily: t.fontBody, boxShadow: t.shadow,
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = t.shadowHover; e.currentTarget.style.transform = "translateX(-2px)"; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = t.shadow; e.currentTarget.style.transform = "none"; }}
+        >
+          <span style={{ fontSize: 16, lineHeight: 1 }}>←</span>
+          <span>Retour</span>
+        </button>
+
+        <div style={{ fontSize: 44, marginBottom: 14, marginTop: 8 }}>✂️💅</div>
         <div style={{ fontFamily: t.font, fontSize: 30, fontWeight: 700, color: t.text, lineHeight: 1.1 }}>
           Trouvez votre pro
         </div>
@@ -81,7 +121,6 @@ export default function ExploreScreen() {
           <CityAutocomplete t={t} value={city} onChange={setCity} placeholder="Ex: Paris, Lyon, Marseille..." />
         </div>
 
-        {/* Category pills */}
         <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 2 }}>
           {CATS.map(c => {
             const active = cat === c.id;
@@ -117,17 +156,30 @@ export default function ExploreScreen() {
             cursor: city && !loading ? "pointer" : "not-allowed",
             boxShadow: city && !loading ? `0 4px 20px ${t.primaryGlow}` : "none",
             transition: "all 0.2s",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}
         >
-          {loading ? "Recherche en cours..." : "Rechercher 🔍"}
+          {loading ? (
+            <>
+              <span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" }} />
+              Recherche en cours...
+            </>
+          ) : "Rechercher 🔍"}
         </button>
       </div>
 
-      {/* Results / states */}
+      {/* Results */}
       <div style={{ padding: "20px 16px 80px" }}>
 
-        {/* RLS error — prompt to add Supabase policy */}
-        {error === "rls" && (
+        {/* Loading skeletons */}
+        {loading && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, animation: "slideUp 0.2s ease" }}>
+            {[1, 2, 3].map(i => <ProSkeleton key={i} t={t} />)}
+          </div>
+        )}
+
+        {/* RLS error */}
+        {!loading && error === "rls" && (
           <div style={{ background: "#FFF8E1", border: "1px solid #F59E0B40", borderRadius: t.r, padding: "16px", animation: "slideUp 0.25s ease" }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: "#B45309", marginBottom: 6 }}>
               ⚙️ Accès public non configuré
@@ -149,7 +201,7 @@ export default function ExploreScreen() {
         )}
 
         {/* Empty results */}
-        {searched && !loading && error === "" && pros.length === 0 && (
+        {!loading && searched && error === "" && pros.length === 0 && (
           <div style={{ textAlign: "center", padding: "48px 0", animation: "slideUp 0.25s ease" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>😔</div>
             <div style={{ fontSize: 15, color: t.text, fontWeight: 600 }}>Aucun professionnel trouvé</div>
@@ -168,7 +220,7 @@ export default function ExploreScreen() {
         )}
 
         {/* Pro list */}
-        {pros.length > 0 && (
+        {!loading && pros.length > 0 && (
           <div style={{ animation: "slideUp 0.25s ease" }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, letterSpacing: "0.04em", marginBottom: 12 }}>
               {pros.length} PROFESSIONNEL{pros.length > 1 ? "S" : ""} À {city.toUpperCase()}
@@ -211,8 +263,8 @@ export default function ExploreScreen() {
           </div>
         )}
 
-        {/* How it works (initial state) */}
-        {!searched && (
+        {/* How it works */}
+        {!loading && !searched && (
           <div style={{ marginTop: 12 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, letterSpacing: "0.04em", marginBottom: 12 }}>
               COMMENT CA MARCHE

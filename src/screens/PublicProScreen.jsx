@@ -290,12 +290,35 @@ export default function PublicProScreen({ slug }) {
   const slots = getSlots(pro?.work_hours, selectedDate);
   const minDate = new Date().toISOString().split("T")[0];
 
-  // Loading
+  // Loading skeleton
   if (loading) {
+    const tb = T.beauty;
+    const pulse = { background: `linear-gradient(90deg,${tb.bgCard} 25%,${tb.bgMuted} 50%,${tb.bgCard} 75%)`, backgroundSize: "200% 100%", animation: "shimmer 1.4s ease-in-out infinite", borderRadius: tb.rsm };
     return (
-      <div style={{ maxWidth: 430, margin: "0 auto", background: T.beauty.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{`*{box-sizing:border-box;margin:0;padding:0;}`}</style>
-        <div style={{ fontSize: 36 }}>✂️</div>
+      <div style={{ maxWidth: 430, margin: "0 auto", background: tb.bg, minHeight: "100vh", fontFamily: tb.fontBody }}>
+        <style>{`*{box-sizing:border-box;margin:0;padding:0;} @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}`}</style>
+        <div style={{ height: 200, background: `linear-gradient(160deg,${tb.bgMuted},${tb.bgCard})`, padding: "48px 24px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ height: 28, width: "55%", ...pulse }} />
+          <div style={{ height: 16, width: "40%", ...pulse }} />
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            {[80, 60, 70].map(w => <div key={w} style={{ height: 22, width: w, borderRadius: tb.rpill, ...pulse }} />)}
+          </div>
+        </div>
+        <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ height: 12, width: 120, ...pulse, marginBottom: 4 }} />
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ background: tb.bgCard, borderRadius: tb.r, border: `1px solid ${tb.border}`, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <div style={{ width: 40, height: 40, ...pulse, borderRadius: tb.rsm }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ height: 13, width: 110, ...pulse }} />
+                  <div style={{ height: 10, width: 70, ...pulse }} />
+                </div>
+              </div>
+              <div style={{ height: 16, width: 48, ...pulse }} />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
