@@ -150,6 +150,7 @@ export default function AgendaScreen({ t }) {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 13, fontWeight: 700, color: t.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{apt.client_name}</div>
                             <div style={{ fontSize: 11, color: t.textMuted }}>{apt.service_name || "—"} · {apt.duration_min}min · {apt.price}€</div>
+                            {apt.client_phone && <div style={{ fontSize: 11, color: t.textMuted }}>📞 {apt.client_phone}</div>}
                           </div>
                           <SBadge status={apt.status} t={t} />
                         </div>

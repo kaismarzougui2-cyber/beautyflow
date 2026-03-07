@@ -12,6 +12,7 @@ import OnboardingScreen from "./screens/OnboardingScreen.jsx";
 import ExploreScreen from "./screens/ExploreScreen.jsx";
 import PublicProScreen from "./screens/PublicProScreen.jsx";
 import PublicPageScreen from "./screens/PublicPageScreen.jsx";
+import ConfirmBookingScreen from "./screens/ConfirmBookingScreen.jsx";
 
 const NAV = [
   { id: "dashboard", icon: "📊", label: "Dashboard" },
@@ -151,6 +152,7 @@ export default function BeautyFlowPro() {
       <Routes>
         <Route path="/explore" element={<ExploreScreen />} />
         <Route path="/pro/:slug" element={<PublicProRoute />} />
+        <Route path="/confirm/:token" element={<ConfirmBookingScreen />} />
         <Route path="/onboarding" element={<OnboardingScreen />} />
         <Route path="*" element={<AppShell />} />
       </Routes>
